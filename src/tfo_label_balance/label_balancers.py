@@ -144,3 +144,27 @@ class LinRegLabelBalancer(LabelBalancer):
         return f"Linear Regression Label Balancer (bin_width={self.bin_width}, range={self.value_range})"
 
 
+class NoLabelBalancer(LabelBalancer):
+    """
+    Emulate no label balancing. The returned dataset has the same format as a regular label balancer.
+    """
+
+    def __init__(self):
+        super().__init__(required_keys=[])
+
+    def balance(self, dataset: pd.DataFrame, meta_data: Dict) -> pd.DataFrame:
+        balanced_df = dataset.copy()
+        ac_ratio_names: List[str] = meta_data["ac_ratio_names"]
+        dc_names: List[str] = meta_data["dc_names"]
+        label_name: str = meta_data["label_name"]
+        grouping_column: str = meta_data["grouping_column"]
+        columns_to_keep = ac_ratio_names + dc_names + [label_name, grouping_column]
+        balanced_df = balanced_df[columns_to_keep]
+        balanced_df["synthetic"] = False
+        return balanced_df
+        
+        
+        
+
+    def __str__(self):
+        return "No Label Balancer"
