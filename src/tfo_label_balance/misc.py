@@ -1,17 +1,6 @@
 """
 Miscellaneous utility functions for TFO label balancing.
 """
-
-import pandas as pd
-from custom_sobolev_training.data_gen import (
-    DifferenceComputer,
-    ForwardDifference,
-    CentralDifference,
-)
-from custom_sobolev_training.complex_differences import LabelBinnedDifference
-from custom_sobolev_training.outlier_reject import StdDevOutlierRejector
-import matplotlib.pyplot as plt
-from sklearn.preprocessing import RobustScaler, StandardScaler, MinMaxScaler
 from tfo_sim2.four_layer_model_optical_props_table import get_blood_filled_tissue_mu_a
 import numpy as np
 
