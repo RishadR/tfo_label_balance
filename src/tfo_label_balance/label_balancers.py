@@ -77,20 +77,14 @@ class LinRegLabelBalancer(LabelBalancer):
             alphas = np.zeros(len(ac_ratio_names))
             for index, ac_ratio_name in enumerate(ac_ratio_names):
                 ac_ratio = group_df[ac_ratio_name].to_numpy()
-                alpha, _ = compute_filtered_alpha(
-                    ac_ratio, saturation, self.keep_threshold
-                )
+                alpha, _ = compute_filtered_alpha(ac_ratio, saturation, self.keep_threshold)
                 # TODO: Determine if we keep these bad values or not
                 alphas[index] = alpha
 
             # Generate synthetic points for each bin using pre-computed alphas
             ## All the following arrays are 2D where rows are data points
-            synthetic_ac_ratios = np.zeros(
-                (np.sum(points_to_generate), len(ac_ratio_names))
-            )
-            synthetic_dcs = np.repeat(
-                dc_mean, repeats=synthetic_ac_ratios.shape[0], axis=0
-            )
+            synthetic_ac_ratios = np.zeros((np.sum(points_to_generate), len(ac_ratio_names)))
+            synthetic_dcs = np.repeat(dc_mean, repeats=synthetic_ac_ratios.shape[0], axis=0)
             synthetic_saturations = np.zeros((synthetic_ac_ratios.shape[0], 1))
             current_pointer = 0
             for bin_index, points_to_generate_in_bin in enumerate(points_to_generate):
@@ -101,20 +95,12 @@ class LinRegLabelBalancer(LabelBalancer):
                 # Otherwise generate random saturation bins and create synthetic AC ratios
                 bin_lower = self.bins[bin_index]
                 bin_upper = self.bins[bin_index + 1]
-                random_saturations = np.random.uniform(
-                    bin_lower, bin_upper, points_to_generate_in_bin
-                )
-                epsilon_ratios = compute_epsilon_ratio(
-                    random_saturations, 735.0, 850.0
-                )  # THE ORDERING HAS TO MATCH
+                random_saturations = np.random.uniform(bin_lower, bin_upper, points_to_generate_in_bin)
+                epsilon_ratios = compute_epsilon_ratio(random_saturations, 735.0, 850.0)  # THE ORDERING HAS TO MATCH
                 temp_ac_ratios = epsilon_ratios.reshape(-1, 1) * alphas.reshape(1, -1)
                 data_len = temp_ac_ratios.shape[0]
-                synthetic_ac_ratios[current_pointer : current_pointer + data_len, :] = (
-                    temp_ac_ratios
-                )
-                synthetic_saturations[
-                    current_pointer : current_pointer + data_len, 0
-                ] = random_saturations
+                synthetic_ac_ratios[current_pointer : current_pointer + data_len, :] = temp_ac_ratios
+                synthetic_saturations[current_pointer : current_pointer + data_len, 0] = random_saturations
                 current_pointer += data_len
             synthetic_data_ac_and_dc_and_sat.append(
                 np.hstack((synthetic_ac_ratios, synthetic_dcs, synthetic_saturations))
@@ -124,9 +110,7 @@ class LinRegLabelBalancer(LabelBalancer):
         # Combine all synthetic data and create a DataFrame
         synthetic_data_ac_and_dc_and_sat = np.vstack(synthetic_data_ac_and_dc_and_sat)
         synthetic_columns = ac_ratio_names + dc_names + [label_name]
-        synthetic_df = pd.DataFrame(
-            synthetic_data_ac_and_dc_and_sat, columns=synthetic_columns
-        )
+        synthetic_df = pd.DataFrame(synthetic_data_ac_and_dc_and_sat, columns=synthetic_columns)
         synthetic_df["synthetic"] = True
         synthetic_df[grouping_column] = synthetic_grouping_column
 
@@ -150,7 +134,8 @@ class NoLabelBalancer(LabelBalancer):
     """
 
     def __init__(self):
-        super().__init__(required_keys=[])
+        required_keys = ["ac_ratio_names", "dc_names", "label_name", "grouping_column"]
+        super().__init__(required_keys)
 
     def balance(self, dataset: pd.DataFrame, meta_data: Dict) -> pd.DataFrame:
         balanced_df = dataset.copy()
@@ -162,9 +147,6 @@ class NoLabelBalancer(LabelBalancer):
         balanced_df = balanced_df[columns_to_keep]
         balanced_df["synthetic"] = False
         return balanced_df
-        
-        
-        
 
     def __str__(self):
         return "No Label Balancer"

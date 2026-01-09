@@ -15,6 +15,8 @@ def get_holdout_dataloaders(
     heldout_groups: List[str],
     batch_size: int = 32,
     shuffle: bool = True,
+    include_synthetic_in_train: bool = False,
+    include_synthetic_in_val: bool = False,
     **kwargs
 ) -> Tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
     """
@@ -35,7 +37,14 @@ def get_holdout_dataloaders(
     :type heldout_groups: List[str]
     :param batch_size: Batch size for the DataLoaders.
     :type batch_size: int
+    :param shuffle: Whether to shuffle the training data.
+    :type shuffle: bool
+    :param include_synthetic_in_train: Whether to include synthetic data in the training set.
+    :type include_synthetic_in_train: bool
+    :param include_synthetic_in_val: Whether to include synthetic data in the validation set.
+    :type include_synthetic_in_val: bool
     :param kwargs: Additional keyword arguments passed directly to DataLoader.
+    :type kwargs: dict
     :return: A tuple containing the training and validation DataLoaders.
     :rtype: Tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader]
     """
@@ -47,8 +56,14 @@ def get_holdout_dataloaders(
     feature_columns = ac_ratio_names + dc_names
 
     # Split dataset into training and validation sets
-    val_dataset = dataset[dataset[grouping_column].isin(heldout_groups)]
     train_dataset = dataset[~dataset[grouping_column].isin(heldout_groups)]
+    val_dataset = dataset[dataset[grouping_column].isin(heldout_groups)]
+    
+    # Handle inclusion/exclusion of synthetic data
+    if not include_synthetic_in_train:
+        train_dataset = train_dataset[train_dataset["synthetic"] == False]
+    if not include_synthetic_in_val:
+        val_dataset = val_dataset[val_dataset["synthetic"] == False]
 
     # Convert datasets to tensors
     def df_to_tensor_loader(df: pd.DataFrame) -> torch.utils.data.DataLoader:
