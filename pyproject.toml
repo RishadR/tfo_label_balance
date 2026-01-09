@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tfo_label_balance"
+version = "0.1.0"
+description = "A project for balancing labels in TFO datasets"
+authors = [{name = "Rishad Raiyan Joarder", email = "sa.dip987@gmail.com"}]
+requires-python = ">=3.5"
+license = {text = "MIT"}
+
