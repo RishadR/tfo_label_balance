@@ -56,6 +56,7 @@ class LinRegLabelBalancer(LabelBalancer):
         grouping_column: str = meta_data["grouping_column"]
         groups = dataset[grouping_column].unique().tolist()
         synthetic_data_ac_and_dc_and_sat = []
+        synthetic_grouping_column = []
 
         # For each group, compute the alphas and balance the labels accordingly
         for group in groups:
@@ -118,6 +119,7 @@ class LinRegLabelBalancer(LabelBalancer):
             synthetic_data_ac_and_dc_and_sat.append(
                 np.hstack((synthetic_ac_ratios, synthetic_dcs, synthetic_saturations))
             )
+            synthetic_grouping_column.extend([group] * synthetic_ac_ratios.shape[0])
 
         # Combine all synthetic data and create a DataFrame
         synthetic_data_ac_and_dc_and_sat = np.vstack(synthetic_data_ac_and_dc_and_sat)
@@ -126,10 +128,11 @@ class LinRegLabelBalancer(LabelBalancer):
             synthetic_data_ac_and_dc_and_sat, columns=synthetic_columns
         )
         synthetic_df["synthetic"] = True
+        synthetic_df[grouping_column] = synthetic_grouping_column
 
         # Combine the original dataset with the synthetic dataset
         ## Keep only the required columns from the original dataset
-        original_df = dataset[synthetic_columns].copy()
+        original_df = dataset[synthetic_columns + [grouping_column]].copy()
         original_df["synthetic"] = False
 
         # Combine the original dataset with the synthetic dataset
@@ -141,22 +144,3 @@ class LinRegLabelBalancer(LabelBalancer):
         return f"Linear Regression Label Balancer (bin_width={self.bin_width}, range={self.value_range})"
 
 
-if __name__ == "__main__":
-    true_data = pd.read_csv("./data/combined_LLPSA2.csv")
-    true_data['fSaO2'] /= 100.0  # Convert to fraction
-    for idx in range(1, 6):
-        true_data[f"AC_ratio_{idx}"] = (
-            true_data[f"Amp_{idx}"].to_numpy() / true_data[f"Amp_{idx+5}"].to_numpy()
-        )
-    meta_data = {
-        "ac_ratio_names": [f"AC_ratio_{i}" for i in range(1, 6)],
-        "dc_names": [f"DC_{i}" for i in range(1, 11)],
-        "label_name": "fSaO2",
-        "grouping_column": "experiment_id",
-    }
-    balancer = LinRegLabelBalancer()
-    balancer.check_meta_data(meta_data)
-    balanced_data = balancer.balance(true_data, meta_data)
-    print(f"Original data length: {len(true_data)}")
-    print(f"Balanced data length: {len(balanced_data)}")
-    print(f"New points added: {len(balanced_data) - len(true_data)}")
