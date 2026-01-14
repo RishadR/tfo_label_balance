@@ -22,14 +22,16 @@ def get_holdout_dataloaders(
     """
     Generate training and validation DataLoaders from the dataset.
 
-    :param dataset: The complete dataset as a pandas DataFrame.
+    :param dataset: The complete dataset as a pandas DataFrame. The dataset must contain these columns:
+        - Feature columns as specified in meta_data["feature_names"]
+        - Label column as specified in meta_data["label_name"]
+        - Grouping column as specified in meta_data["grouping_column"]
+        - "synthetic" column indicating whether a row is synthetic or real.
     :type dataset: pd.DataFrame
     :param meta_data: Metadata dictionary containing necessary information. The meta_data requires the following keys:
-        - "ac_ratio_names": List of column names for AC ratios.
-        - "dc_names": List of column names for DC values.
+        - "feature_names": List of feature column names.
         - "label_name": The name of the label column.
         - "grouping_column": The name of the column used for grouping.
-    Out of these, the ac_ratio_names and dc_names are set as features and the label_name is set as the target variable.
     :type meta_data: Dict
     :param device: The device to load the tensors onto.
     :type device: torch.device
@@ -49,16 +51,14 @@ def get_holdout_dataloaders(
     :rtype: Tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader]
     """
     grouping_column: str = meta_data["grouping_column"]
-    ac_ratio_names: List[str] = meta_data["ac_ratio_names"]
-    dc_names: List[str] = meta_data["dc_names"]
+    feature_columns: List[str] = meta_data["feature_names"]
     label_name: str = meta_data["label_name"]
     grouping_column: str = meta_data["grouping_column"]
-    feature_columns = ac_ratio_names + dc_names
 
     # Split dataset into training and validation sets
     train_dataset = dataset[~dataset[grouping_column].isin(heldout_groups)]
     val_dataset = dataset[dataset[grouping_column].isin(heldout_groups)]
-    
+
     # Handle inclusion/exclusion of synthetic data
     if not include_synthetic_in_train:
         train_dataset = train_dataset[train_dataset["synthetic"] == False]

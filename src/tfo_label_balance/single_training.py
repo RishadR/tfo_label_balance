@@ -5,10 +5,12 @@ Code to run a single instance of model training
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader
 from typing import Dict, Callable, Optional, List
 from tqdm import tqdm
 from sklearn.preprocessing import StandardScaler, RobustScaler
 import numpy as np
+
 
 def train_model(
     model: nn.Module,
@@ -68,17 +70,11 @@ def train_model(
             features = features.to(device)
             labels = labels.to(device)
 
-            # Split features into actual features and gradients
-            # First half: actual features, Second half: gradients
-            num_features = features.shape[1] // 2
-            actual_features = features[:, :num_features]
-            target_gradients = features[:, num_features:]
-
             # Zero gradients
             optimizer.zero_grad()
 
             # Forward pass with actual features
-            predictions = model(actual_features)
+            predictions = model(features)
 
             # Compute label loss
             label_loss = loss_fn(predictions, labels)
@@ -140,8 +136,8 @@ def train_model(
 
 
 def unscaled_mae_evaluator(
-    model: torch.nn.Module,
-    data_loader: torch.utils.data.DataLoader,
+    model: nn.Module,
+    data_loader: DataLoader,
     device: torch.device,
     y_scaler: StandardScaler | RobustScaler | None = None,
 ):
@@ -152,9 +148,7 @@ def unscaled_mae_evaluator(
         for features, labels in data_loader:
             features = features.to(device)
             labels = labels.to(device)
-            num_features = features.shape[1] // 2
-            actual_features = features[:, :num_features]
-            predictions = model(actual_features)
+            predictions = model(features)
             all_labels.append(labels.cpu().numpy())
             all_preds.append(predictions.cpu().numpy())
     all_labels = np.concatenate(all_labels, axis=0)
@@ -164,3 +158,38 @@ def unscaled_mae_evaluator(
         all_preds = y_scaler.inverse_transform(all_preds)
     mae = np.mean(np.abs(all_labels - all_preds))
     return {"MAE": float(mae)}
+
+
+def randalls_evaluator(
+    model: nn.Module,
+    data_loader: DataLoader,
+    device: torch.device,
+    y_scaler: StandardScaler | RobustScaler | None = None,
+):
+    model.eval()
+    all_labels = []
+    all_preds = []
+    with torch.no_grad():
+        for features, labels in data_loader:
+            features = features.to(device)
+            labels = labels.to(device)
+            predictions = model(features)
+            all_labels.append(labels.cpu().numpy())
+            all_preds.append(predictions.cpu().numpy())
+    all_labels = np.concatenate(all_labels, axis=0)
+    all_preds = np.concatenate(all_preds, axis=0)
+    if y_scaler is not None:
+        all_labels = y_scaler.inverse_transform(all_labels)
+        all_preds = y_scaler.inverse_transform(all_preds)
+
+    mae = np.mean(np.abs(all_labels - all_preds))
+    correlation = np.corrcoef(all_labels.flatten(), all_preds.flatten())[0, 1]
+    coeffs = np.polyfit(all_labels.flatten(), all_preds.flatten(), 1)
+    slope = coeffs[0]
+    intercept = coeffs[1]
+    return {
+        "MAE": float(mae),
+        "Correlation": float(correlation),
+        "Linear_Fit_Slope": float(slope),
+        "Linear_Fit_Intercept": float(intercept),
+    }
