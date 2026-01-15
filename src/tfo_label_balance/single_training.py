@@ -104,6 +104,7 @@ def train_model(
         history["train_loss"].append(avg_train_loss)
 
         # Evaluation phase
+        model.eval()
         print(f"\nEvaluating on training set...")
         train_metrics = evaluator_fn(model, train_loader, device)
         history["train_metrics"].append(train_metrics)

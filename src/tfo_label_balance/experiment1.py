@@ -40,15 +40,14 @@ train_loader, val_loader = get_holdout_dataloaders(
 )
 
 model = torch.nn.Sequential(
-    torch.nn.Linear(feature_len, 32),
+    torch.nn.Linear(feature_len, 12),
     torch.nn.ReLU(),
-    torch.nn.BatchNorm1d(32),
-    torch.nn.Linear(32, 8),
+    torch.nn.Linear(12, 8),
     torch.nn.ReLU(),
     torch.nn.BatchNorm1d(8),
     torch.nn.Linear(8, 1),
 ).to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=3e-4, weight_decay=1e-5)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-4)
 loss_fn = torch.nn.MSELoss()
 # evaluator = lambda model, data_loader, device: unscaled_mae_evaluator(model, data_loader, device, y_scaler=label_scaler)
 evaluator = lambda model, data_loader, device: randalls_evaluator(model, data_loader, device, y_scaler=label_scaler)
