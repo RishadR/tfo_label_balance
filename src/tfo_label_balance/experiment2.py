@@ -10,14 +10,17 @@ from tfo_label_balance.datagen import get_holdout_dataloaders
 from tfo_label_balance.single_training import train_model, unscaled_mae_evaluator, randalls_evaluator
 
 
-data = pd.read_csv("./data/combined_LLPSA2.csv")
-# with open("./data/balanced_dataset.yaml", "r") as f:
-#     meta_data = yaml.safe_load(f)
-for idx in range(10):
-    data[f"EPR_{idx + 1}"] = data.iloc[:, idx].to_numpy() / data.iloc[:, idx + 10].to_numpy()
-data["synthetic"] = False
-data["fSaO2"] /= 100.0  # Scale to [0, 1]
+data = pd.read_csv("./data/balanced_dataset2.csv")
+with open("./data/balanced_dataset2.yaml", "r") as f:
+    meta_data = yaml.safe_load(f)
 
+
+# Compute EPR = AC / DC for each wavelength
+for idx, (ac_name, dc_name) in enumerate(zip(meta_data["ac_names"], meta_data["dc_names"])):
+    epr_name = f"EPR_{idx + 1}"
+    data[epr_name] = data[ac_name].to_numpy() / data[dc_name].to_numpy()
+
+# Get Validation group
 all_groups = data["experiment_id"].unique().tolist()
 heldout_group = [all_groups[1]]  # Hold out the first group for validation
 feature_names = [f"EPR_{idx + 1}" for idx in range(10)]

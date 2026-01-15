@@ -17,6 +17,10 @@ def compute_epsilon(saturation: np.ndarray, wavelength: float) -> np.ndarray:
         Array of epsilon values as a 1D numpy array.
     """
     saturation = saturation.flatten()
+    # Sanity check
+    out_of_bounds_count = np.sum((saturation < 0) | (saturation > 1))
+    if out_of_bounds_count > 0:
+        raise ValueError(f"Saturation must be in the range [0, 1]. Found {out_of_bounds_count} out-of-bounds values.")
     epsilon = np.array([get_blood_filled_tissue_mu_a(1.0, 1.0, x, wavelength, 1.0, 0.0) for x in saturation])
     return epsilon
 

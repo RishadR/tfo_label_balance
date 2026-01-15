@@ -61,6 +61,6 @@ def generate_ac_balanced_data():
 
 
 if __name__ == "__main__":
-    # generate_ac_balanced_data()
-    generate_ac_by_ac_balanced_data()
+    generate_ac_balanced_data()
+    # generate_ac_by_ac_balanced_data()
     
