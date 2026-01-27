@@ -45,9 +45,9 @@ train_loader, val_loader = get_holdout_dataloaders(
     meta_data,
     device=device,
     heldout_groups=heldout_group,
-    batch_size=32,
+    batch_size=512,
     shuffle=True,
-    include_synthetic_in_train=True,
+    include_synthetic_in_train=False,
     include_synthetic_in_val=False,
 )
 
@@ -55,7 +55,7 @@ model = torch.nn.Sequential(
     torch.nn.Linear(feature_len, 12),
     torch.nn.ReLU(),
     torch.nn.Linear(12, 6),
-    torch.nn.BatchNorm1d(6),
+    # torch.nn.BatchNorm1d(6),
     torch.nn.ReLU(),
     torch.nn.Linear(6, 1),
 ).to(device)
@@ -65,7 +65,7 @@ for layer in model.modules():
     if isinstance(layer, torch.nn.Linear):
         torch.nn.init.kaiming_normal_(layer.weight.data, nonlinearity='relu')
 
-optimizer = torch.optim.Adam(model.parameters(), lr=2e-4, weight_decay=1e-4)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-1, weight_decay=1e-2)
 loss_fn = torch.nn.MSELoss()
 # evaluator = lambda model, data_loader, device: unscaled_mae_evaluator(model, data_loader, device, y_scaler=label_scaler)
 evaluator = lambda model, data_loader, device: randalls_evaluator(model, data_loader, device, y_scaler=label_scaler)
